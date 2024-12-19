@@ -27,12 +27,22 @@ fun AppNav(context: Context) {
         composable("home") {
             Home(navController = navController, db = db)
         }
-        composable("workout") {
-            Workout(
-                navController = navController, db = db, id = 0)
+        composable(
+            route = "workout/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val workoutId = backStackEntry.arguments?.getInt("id") ?: -1
+            Workout(navController = navController, db = SqlLiteManager(), id = workoutId)
         }
         composable("new-workout") {
             NewWorkout(navController = navController, db = db)
+        }
+        composable(
+            route = "start-workout/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val workoutId = backStackEntry.arguments?.getInt("id") ?: -1
+            PlayWorkout(navController = navController, db = SqlLiteManager(), id = workoutId)
         }
     }
     Button(
