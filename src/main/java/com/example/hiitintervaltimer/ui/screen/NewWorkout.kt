@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -285,16 +286,25 @@ fun TextForm(name: String, help: String, onNext: () -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Modifier
                 .fillMaxWidth()
-            OutlinedTextField(
-                value = workoutName,
-                onValueChange = { workoutName = it },
-                label = { Text("$name") },
-                placeholder = { Text("Enter $name Here: ") }
-            )
-            IconButton(
-                onClick = onNext,
-            ) {
-                Icon(Icons.Default.Info, contentDescription = "Help", tint = Color.White)
+            Column {
+                IconButton(
+                    onClick = {},
+                ) {
+                    Icon(Icons.Default.Info, contentDescription = "Help", tint = Color.White)
+                }
+            }
+            Column {
+                OutlinedTextField(
+                    value = workoutName,
+                    onValueChange = { workoutName = it },
+                    label = { Text(name) },
+                    placeholder = { Text("Enter $name Here: ") }
+                )
+                IconButton(
+                    onClick = onNext,
+                ) {
+                    Icon(Icons.Default.Check, contentDescription = "Next", tint = Color.White)
+                }
             }
 }
 
