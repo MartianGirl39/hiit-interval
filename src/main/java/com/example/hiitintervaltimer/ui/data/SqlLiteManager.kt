@@ -5,6 +5,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.database.sqlite.SQLiteStatement
+import com.example.hiitintervaltimer.ui.data.SqlLiteManager.Companion.INTERVAL_MODEL_MAPPING
 import kotlin.reflect.KProperty1
 
 class SqlLiteManager(context: Context) :
@@ -21,17 +22,26 @@ class SqlLiteManager(context: Context) :
         )
         private val INTERVAL_TYPES = mapOf(
             "timed_interval" to listOf(
-                "name VARCHAR(50)",
-                "description VARCHAR(300)",
-                "time INTEGER"
+                "name VARCHAR(50)", // indentifier of the interval
+                "description VARCHAR(300)", // dseciption said right before starting interval
+                "time INTEGER", // time in seconds that the inteval will go on for
+                "delay INTEGER", // delay between starting the next interval,
+                "order INTEGER",
             ),
             "counted_interval" to listOf(
                 "name VARCHAR(50)",
                 "description VARCHAR(300)",
                 "count INTEGER",
-                "delay INTEGER"
+                "delay INTEGER",
+                "order INTEGER"
             )
         )
+        private val INTERVAL_MODEL_MAPPING = mapOf(
+            "timed_interval" to TimedInterval("", "", 0, 0, 0),
+            "counted_interval" to CountedInterval("", "", 0, 0, 0)
+        )
+        private val PRELOADED_WORKOUTS = listOf(WorkoutModel("Basic Warm Up", "a basic warm up just for you", WORKOUT_FUNCTION.WARM_UP,
+            listOf(TimedInterval("Walk", "walk, slowly increasing speed as you feel ready", 15*60, 0, 1))))
     }
 
     override fun onCreate(db: SQLiteDatabase?) {
@@ -68,11 +78,15 @@ class SqlLiteManager(context: Context) :
         onCreate(db)
     }
 
+    fun getProperType(type: INTERVAL_OPTION): IntervalModel? {
+        return INTERVAL_MODEL_MAPPING[type.value]
+    }
+
     // Refactored to remove db parameter
     fun addWorkout(workout: WorkoutModel) {
         val workoutId = insertWorkout(workout)
-        workout.intervals.forEach { rep ->
-            insertInterval(rep, workoutId)
+        workout.intervals.forEach { Interval ->
+            insertInterval(Interval, workoutId)
         }
     }
 
@@ -105,21 +119,21 @@ class SqlLiteManager(context: Context) :
     }
 
     // Refactored to remove db parameter
-    private fun insertInterval(rep: RepModel, workoutId: Long) {
+    private fun insertInterval(Interval: IntervalModel, workoutId: Long) {
         val db = writableDatabase // Get the writable database
-        val columns = INTERVAL_TYPES[rep.mapsToTable]?.joinToString(", ") ?: ""
-        val insertRep = """
-            INSERT INTO ${rep.mapsToTable} ($columns, workout)
-            VALUES (${INTERVAL_TYPES.get(rep.mapsToTable)}, ?);
+        val columns = INTERVAL_TYPES[Interval.mapsTo()]?.joinToString(", ") ?: ""
+        val insertInterval = """
+            INSERT INTO ${Interval.mapsTo()} ($columns, workout)
+            VALUES (${INTERVAL_TYPES.get(Interval.mapsTo())}, ?);
         """
-        val repStatement = db.compileStatement(insertRep)
-        bindRepModelValuesToStatement(repStatement, rep)
-        repStatement.bindLong(INTERVAL_TYPES.get(rep.mapsToTable)?.size?.plus(1) ?: 0, workoutId)
-        repStatement.executeInsert()
+        val IntervalStatement = db.compileStatement(insertInterval)
+        bindIntervalModelValuesToStatement(IntervalStatement, Interval)
+        IntervalStatement.bindLong(INTERVAL_TYPES.get(Interval.mapsTo())?.size?.plus(1) ?: 0, workoutId)
+        IntervalStatement.executeInsert()
     }
 
-    private fun bindRepModelValuesToStatement(statement: SQLiteStatement, model: RepModel) {
-        model::class.members.filterIsInstance<KProperty1<RepModel, *>>()
+    private fun bindIntervalModelValuesToStatement(statement: SQLiteStatement, model: IntervalModel) {
+        model::class.members.filterIsInstance<KProperty1<IntervalModel, *>>()
             .forEachIndexed { index, property ->
                 val value = property.get(model)
                 if (index == 0) {
@@ -139,8 +153,8 @@ class SqlLiteManager(context: Context) :
     // Refactored to remove db parameter
     fun updateWorkout(workoutId: Long, workout: WorkoutModel) {
         updateWorkoutInDb(workoutId, workout)
-        workout.intervals.forEach { rep ->
-            updateIntervalInDb(rep, workoutId)
+        workout.intervals.forEach { Interval ->
+            updateIntervalInDb(Interval, workoutId)
         }
     }
 
@@ -159,18 +173,18 @@ class SqlLiteManager(context: Context) :
     }
 
     // Refactored to remove db parameter
-    private fun updateIntervalInDb(rep: RepModel, workoutId: Long) {
+    private fun updateIntervalInDb(Interval: IntervalModel, workoutId: Long) {
         val db = writableDatabase // Get the writable database
-        val updateRep = """
-            UPDATE ${rep.mapsToTable}
-            SET ${INTERVAL_TYPES[rep.mapsToTable]?.joinToString(", ") { "$it = ?" }}
+        val updateInterval = """
+            UPDATE ${Interval.mapsTo()}
+            SET ${INTERVAL_TYPES[Interval.mapsTo()]?.joinToString(", ") { "$it = ?" }}
             WHERE workout = ?;
         """
-        val repStatement = db.compileStatement(updateRep)
-        bindRepModelValuesToStatement(repStatement, rep)
-        val intervalSize = INTERVAL_TYPES[rep.mapsToTable]?.size ?: 0
-        repStatement.bindLong(intervalSize + 1, workoutId)
-        repStatement.executeUpdateDelete()
+        val IntervalStatement = db.compileStatement(updateInterval)
+        bindIntervalModelValuesToStatement(IntervalStatement, Interval)
+        val intervalSize = INTERVAL_TYPES[Interval.mapsTo()]?.size ?: 0
+        IntervalStatement.bindLong(intervalSize + 1, workoutId)
+        IntervalStatement.executeUpdateDelete()
     }
 
     // Refactored to remove db parameter
@@ -202,67 +216,33 @@ class SqlLiteManager(context: Context) :
         return workouts
     }
 
-    private fun mapRowToWorkout(cursor: Cursor?): WorkoutModel {
-        if (cursor == null || cursor.isBeforeFirst) {
-            return WorkoutModel(
-                "",
-                "",
-                "",
-                emptyList()
-            ) // Return an empty workout model if cursor is empty or invalid
-        }
-
-        // Extract workout data from the cursor
-        val name = cursor.getString(cursor.getColumnIndexOrThrow("name"))
-        val desc = cursor.getString(cursor.getColumnIndexOrThrow("description"))
-        val function = cursor.getString(cursor.getColumnIndexOrThrow("plan_function"))
-
-        // Get associated reps (intervals) for the workout
-        val workoutId = cursor.getInt(cursor.getColumnIndexOrThrow("id"))
-        val intervals = getRepsForWorkout(workoutId)
-
-        // Return the WorkoutModel populated with data
-        return WorkoutModel(name, desc, function, intervals)
-    }
-
-    private fun getRepsForWorkout(workoutId: Int): List<RepModel> {
+    private fun getIntervalsForWorkout(workoutId: Int): List<IntervalModel> {
         val db = readableDatabase // Get the readable database
-        val reps = mutableListOf<RepModel>()
+        val Intervals = mutableListOf<IntervalModel>()
         for (interval in INTERVAL_TYPES.keys) {
             val query = "SELECT * FROM $interval WHERE workout = ?"
             val cursor = db.rawQuery(query, arrayOf(workoutId.toString()))
             while (cursor.moveToNext()) {
-                val repModel = mapRowToRep(cursor)
-                reps.add(repModel)
+                val myInterval = INTERVAL_MODEL_MAPPING[interval]
+                myInterval?.mapRowToUInterval(cursor)?.let { Intervals.add(it) }
             }
             cursor.close()
         }
-        return reps
+        return Intervals
     }
 
-    private fun mapRowToRep(cursor: Cursor?): RepModel {
-        if (cursor == null || cursor.isBeforeFirst) {
-            return RepModel(
-                "",
-                "",
-                "",
-                0,
-                ""
-            ) // Return an empty RepModel if the cursor is empty or invalid
-        }
-
-        // Extract interval (rep) data from the cursor
-        val mapsToTable = cursor.getString(cursor.getColumnIndexOrThrow("mapsToTable"))
-        val name = cursor.getString(cursor.getColumnIndexOrThrow("name"))
-        val desc = cursor.getString(cursor.getColumnIndexOrThrow("description"))
-        val value = cursor.getInt(cursor.getColumnIndexOrThrow("value"))
-        try {
-            val details = cursor.getString(cursor.getColumnIndexOrThrow("details"))
-            return RepModel(mapsToTable, name, desc, value, details)
-        }
-        catch(e: IllegalArgumentException) {
-            // assume there is no details
-            return RepModel(mapsToTable, name, desc, value, "")
-        }
+    private fun mapRowToWorkout(cursor: Cursor?): WorkoutModel {
+        val workout = WorkoutModel(
+            "",
+            "",
+            WORKOUT_FUNCTION.WORKOUT,
+            emptyList()
+        )
+        if (cursor == null || cursor.isBeforeFirst) return workout
+        workout.mapRowToSelf(cursor)
+        val workoutId = cursor.getInt(cursor.getColumnIndexOrThrow("id"))
+        val intervals = getIntervalsForWorkout(workoutId)
+        workout.setInterval(intervals)
+        return workout
     }
 }
