@@ -3,6 +3,7 @@ package com.example.hiitintervaltimer.ui.screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,9 +18,11 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -38,7 +41,6 @@ import com.example.hiitintervaltimer.ui.data.INTERVAL_OPTION
 import com.example.hiitintervaltimer.ui.data.IntervalModel
 import com.example.hiitintervaltimer.ui.data.WORKOUT_FUNCTION
 import com.example.hiitintervaltimer.ui.data.WorkoutModel
-import java.util.Locale
 
 @Composable
 fun NewWorkout(navController: NavController, db: SqlLiteManager, modifier: Modifier) {
@@ -161,11 +163,11 @@ fun NewWorkout(navController: NavController, db: SqlLiteManager, modifier: Modif
 fun IntervalForm(
     onAddInterval: (IntervalModel) -> Unit, db: SqlLiteManager) {
     var expanded by remember { mutableStateOf(false) }
-    var IntervalName by remember { mutableStateOf("") }
-    var IntervalDesc by remember { mutableStateOf("") }
-    var IntervalType by remember { mutableStateOf(INTERVAL_OPTION.TIMED) }
-    var IntervalValue by remember { mutableStateOf(0) }
-    var IntervalDetails by remember { mutableStateOf("") }
+    var intervalName by remember { mutableStateOf("") }
+    var iIntervalDesc by remember { mutableStateOf("") }
+    var intervalType by remember { mutableStateOf(INTERVAL_OPTION.TIMED) }
+    var intervalValue by remember { mutableIntStateOf(0) }
+    var intervalDetails by remember { mutableStateOf("") }
 
     // Dark theme background for interval form
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
@@ -173,8 +175,8 @@ fun IntervalForm(
             // Name field
             Text("Name:", color = Color.White)
             BasicTextField(
-                value = IntervalName,
-                onValueChange = { IntervalName = it },
+                value = intervalName,
+                onValueChange = { intervalName = it },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
@@ -186,8 +188,8 @@ fun IntervalForm(
             // Description field
             Text("Description:", color = Color.White)
             BasicTextField(
-                value = IntervalDesc,
-                onValueChange = { IntervalDesc = it },
+                value = iIntervalDesc,
+                onValueChange = { iIntervalDesc = it },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
@@ -206,27 +208,27 @@ fun IntervalForm(
             ) {
                 DropdownMenuItem(
                     onClick = {
-                        IntervalType = INTERVAL_OPTION.TIMED
+                        intervalType = INTERVAL_OPTION.TIMED
                         expanded = false
                     },
                     text = { Text("Timed", color = Color.White) }
                 )
                 DropdownMenuItem(
                     onClick = {
-                        IntervalType = INTERVAL_OPTION.COUNTED
+                        intervalType = INTERVAL_OPTION.COUNTED
                         expanded = false
                     },
                     text = { Text("Counted", color = Color.White) }
                 )
             }
 
-            Text("Selected Option: ${IntervalType.toString().capitalize()}", color = Color.White)
+            Text("Selected Option: ${intervalType.toString().capitalize()}", color = Color.White)
 
             // Interval Value field
             Text("Value:", color = Color.White)
             BasicTextField(
-                value = TextFieldValue(IntervalValue.toString()),
-                onValueChange = { IntervalValue = it.text.toIntOrNull() ?: 0 },
+                value = TextFieldValue(intervalValue.toString()),
+                onValueChange = { intervalValue = it.text.toIntOrNull() ?: 0 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
@@ -236,11 +238,11 @@ fun IntervalForm(
             )
 
             // Details field for counted interval type
-            if (IntervalType == INTERVAL_OPTION.COUNTED) {
+            if (intervalType == INTERVAL_OPTION.COUNTED) {
                 Text("Details:", color = Color.White)
                 BasicTextField(
-                    value = IntervalDetails,
-                    onValueChange = { IntervalDetails = it },
+                    value = intervalDetails,
+                    onValueChange = { intervalDetails = it },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
@@ -252,15 +254,15 @@ fun IntervalForm(
 
             Button(
                 onClick = {
-                    val interval = db.getProperType(IntervalType)
+                    val interval = db.getProperType(intervalType)
                     if (interval != null) {
                         onAddInterval(interval)
                     }
                     // Reset fields
-                    IntervalName = ""
-                    IntervalDesc = ""
-                    IntervalValue = 0
-                    IntervalDetails = ""
+                    intervalName = ""
+                    iIntervalDesc = ""
+                    intervalValue = 0
+                    intervalDetails = ""
                 },
                 modifier = Modifier
                     .padding(vertical = 16.dp)
@@ -272,3 +274,29 @@ fun IntervalForm(
         }
     }
 }
+
+@Composable
+fun TextForm(name: String, help: String, onNext: () -> Unit) {
+    var workoutName by remember { mutableStateOf("") }
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Modifier
+            .fillMaxWidth()
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Modifier
+                .fillMaxWidth()
+            OutlinedTextField(
+                value = workoutName,
+                onValueChange = { workoutName = it },
+                label = { Text("$name") },
+                placeholder = { Text("Enter $name Here: ") }
+            )
+            IconButton(
+                onClick = onNext,
+            ) {
+                Icon(Icons.Default.Info, contentDescription = "Help", tint = Color.White)
+            }
+}
+
+@Composable
+fun
