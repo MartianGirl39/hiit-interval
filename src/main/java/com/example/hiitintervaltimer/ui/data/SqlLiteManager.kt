@@ -40,8 +40,7 @@ class SqlLiteManager(context: Context) :
             "timed_interval" to TimedInterval("", "", 0, 0, 0),
             "counted_interval" to CountedInterval("", "", 0, 0, 0)
         )
-        private val PRELOADED_WORKOUTS = listOf(WorkoutModel("Basic Warm Up", "a basic warm up just for you", WORKOUT_FUNCTION.WARM_UP,
-            listOf(TimedInterval("Walk", "walk, slowly increasing speed as you feel ready", 15*60, 0, 1))))
+//        private val PRELOADED_WORKOUTS
     }
 
     override fun onCreate(db: SQLiteDatabase?) {
@@ -106,6 +105,7 @@ class SqlLiteManager(context: Context) :
         model::class.members.filterIsInstance<KProperty1<WorkoutModel, *>>()
             .forEachIndexed { index, property ->
                 val value = property.get(model)
+                if (index == 0) {
                     when (value) {
                         is String -> statement.bindString(index + 1, value)
                         is Long -> statement.bindLong(index + 1, value)
@@ -115,6 +115,7 @@ class SqlLiteManager(context: Context) :
                             value.toString()
                         ) // Default to string if unknown type
                     }
+                }
             }
     }
 
@@ -233,6 +234,7 @@ class SqlLiteManager(context: Context) :
 
     private fun mapRowToWorkout(cursor: Cursor?): WorkoutModel {
         val workout = WorkoutModel(
+            -1,
             "",
             "",
             WORKOUT_FUNCTION.WORKOUT,

@@ -13,12 +13,13 @@ enum class WORKOUT_FUNCTION(val value: String) {
     COOL_DOWN("cool_down")
 }
 
-class WorkoutModel(var name: String, var desc: String, var function: WORKOUT_FUNCTION, var intervals: List<IntervalModel>){
+class WorkoutModel(var id: Int, var name: String, var desc: String, var function: WORKOUT_FUNCTION, var intervals: List<IntervalModel>){
     fun setInterval(intervals: List<IntervalModel>) {
         this.intervals = intervals
     }
 
     fun mapRowToSelf(cursor: Cursor): WorkoutModel {
+        this.id = cursor.getInt(cursor.getColumnIndexOrThrow("id"));
         this.name = cursor.getString(cursor.getColumnIndexOrThrow("name"))
         this.desc = cursor.getString(cursor.getColumnIndexOrThrow("description"))
         this.function = WORKOUT_FUNCTION.valueOf(cursor.getString(cursor.getColumnIndexOrThrow("plan_function")))

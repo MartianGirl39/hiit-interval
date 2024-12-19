@@ -1,31 +1,21 @@
-import android.os.Bundle
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.NavHostController
-import com.example.hiitintervaltimer.ui.data.SqlLiteManager
-import com.example.hiitintervaltimer.ui.data.WorkoutModel
+package com.example.hiitintervaltimer.ui.screen
 
-package com.example.hiitintervaltimer.ui.data
-
-import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.example.hiitintervaltimer.R
+import com.example.hiitintervaltimer.ui.data.SqlLiteManager
+import com.example.hiitintervaltimer.ui.data.WorkoutModel
 
 @Composable
 fun Home(navController: NavHostController, db: SqlLiteManager, modifier: Modifier = Modifier) {
@@ -70,8 +60,8 @@ fun WorkoutListing(workout: WorkoutModel, navController: NavHostController) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                // Navigate to the details page or handle click action
-                navController.navigate("workout_detail_screen/${workout.name}")
+                // Navigate to the workout details screen using the workout id
+                navController.navigate("workout/${workout.id}")
             }
             .padding(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -89,7 +79,7 @@ fun WorkoutListing(workout: WorkoutModel, navController: NavHostController) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = workout.function,
+                text = workout.function.value,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.secondary
             )
@@ -101,13 +91,5 @@ fun WorkoutListing(workout: WorkoutModel, navController: NavHostController) {
                 overflow = TextOverflow.Ellipsis
             )
         }
-    }
-}
-
-@Composable
-@Preview
-fun HomePreview() {
-    HIITIntervalTimerTheme {
-        Home(navController = NavHostController(context = null), db = SqlLiteManager())
     }
 }

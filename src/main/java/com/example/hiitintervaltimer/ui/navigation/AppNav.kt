@@ -13,10 +13,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.hiitintervaltimer.ui.screen.Home
 import com.example.hiitintervaltimer.ui.data.SqlLiteManager
+import com.example.hiitintervaltimer.ui.screen.NewWorkout
+import com.example.hiitintervaltimer.ui.screen.PlayWorkout
+import com.example.hiitintervaltimer.ui.screen.Workout
 
 @Composable
 fun AppNav(context: Context) {
@@ -32,21 +38,21 @@ fun AppNav(context: Context) {
             arguments = listOf(navArgument("id") { type = NavType.IntType })
         ) { backStackEntry ->
             val workoutId = backStackEntry.arguments?.getInt("id") ?: -1
-            Workout(navController = navController, db = SqlLiteManager(), id = workoutId)
+            Workout(navController = navController, db = SqlLiteManager(context = context), id = workoutId)
         }
-        composable("new-workout") {
-            NewWorkout(navController = navController, db = db)
+        composable("create") {
+            NewWorkout(navController = navController, db = db, modifier = Modifier)
         }
         composable(
-            route = "start-workout/{id}",
+            route = "play/{id}",
             arguments = listOf(navArgument("id") { type = NavType.IntType })
         ) { backStackEntry ->
             val workoutId = backStackEntry.arguments?.getInt("id") ?: -1
-            PlayWorkout(navController = navController, db = SqlLiteManager(), id = workoutId)
+            PlayWorkout(navController = navController, db = SqlLiteManager(context), id = workoutId)
         }
     }
     Button(
-        onClick = { navController.navigate("new-workout") },
+        onClick = { navController.navigate("create") },
         shape = CircleShape,
         modifier = Modifier
             .size(56.dp) // Adjust size of the button
@@ -65,6 +71,8 @@ fun AppNav(context: Context) {
         )
     }
 }
+
+
 
 
 
