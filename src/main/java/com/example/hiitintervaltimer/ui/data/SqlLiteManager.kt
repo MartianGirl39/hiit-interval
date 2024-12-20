@@ -106,16 +106,17 @@ class SqlLiteManager(context: Context) :
         model::class.members.filterIsInstance<KProperty1<WorkoutModel, *>>()
             .forEachIndexed { index, property ->
                 val value = property.get(model)
-                if (index == 0) {
+                if (property == "mapsTo" || property == "id" || value is func) {
                     when (value) {
-                        is String -> statement.bindString(index + 1, value)
-                        is Long -> statement.bindLong(index + 1, value)
-                        is Double -> statement.bindDouble(index + 1, value)
+                        is String -> statement.bindString(count, value)
+                        is Long -> statement.bindLong(count, value)
+                        is Double -> statement.bindDouble(count, value)
                         else -> statement.bindString(
-                            index + 1,
+                            count,
                             value.toString()
                         ) // Default to string if unknown type
                     }
+                    count += 1
                 }
             }
     }
@@ -126,7 +127,7 @@ class SqlLiteManager(context: Context) :
         val columns = INTERVAL_TYPES[Interval.mapsTo()]?.joinToString(", ") ?: ""
         val insertInterval = """
             INSERT INTO ${Interval.mapsTo()} ($columns, workout)
-            VALUES (${INTERVAL_TYPES.get(Interval.mapsTo())}, ?);
+            VALUES (${INTERVAL_TYPES.get(Interval.mapsTo(){"?,"})} ?);
         """
         val IntervalStatement = db.compileStatement(insertInterval)
         bindIntervalModelValuesToStatement(IntervalStatement, Interval)
@@ -135,19 +136,21 @@ class SqlLiteManager(context: Context) :
     }
 
     private fun bindIntervalModelValuesToStatement(statement: SQLiteStatement, model: IntervalModel) {
+        var count = 0
         model::class.members.filterIsInstance<KProperty1<IntervalModel, *>>()
             .forEachIndexed { index, property ->
                 val value = property.get(model)
-                if (index == 0) {
+                if (property == "mapsTo" || property == "id" || value is func) {
                     when (value) {
-                        is String -> statement.bindString(index + 1, value)
-                        is Long -> statement.bindLong(index + 1, value)
-                        is Double -> statement.bindDouble(index + 1, value)
+                        is String -> statement.bindString(count, value)
+                        is Long -> statement.bindLong(count, value)
+                        is Double -> statement.bindDouble(count, value)
                         else -> statement.bindString(
-                            index + 1,
+                            count,
                             value.toString()
                         ) // Default to string if unknown type
                     }
+                    count += 1
                 }
             }
     }
@@ -201,6 +204,19 @@ class SqlLiteManager(context: Context) :
         }
         cursor.close()
         return workout
+    }
+
+    fun addInterval(interval: IntervalModel, id: Int): Unit {
+        val workout = getWorkout(id)
+        val order = workout.interval.size() + 1
+        val = """
+            INSERT INTO ${interval.mapsTo} (${INTERVAL_TYPES[Interval.mapsTo()]?.joinToString(", ") { "$it = ?" }}) VALUES 
+            (${INTERVAL_TYPES.get(Interval.mapsTo(){"?,"})} ?);
+        """.trimIndent()
+        val statement = db.compileStatement(insertInterval)
+        bindIntervalModelValuesToStatement(statement, interval)
+        statement.bindLong(5, order)
+        return statement.executeInsert()
     }
 
     // Refactored to remove db parameter
