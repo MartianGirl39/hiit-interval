@@ -306,7 +306,4 @@ fun TextForm(name: String, help: String, onNext: () -> Unit) {
                     Icon(Icons.Default.Check, contentDescription = "Next", tint = Color.White)
                 }
             }
-}
-
-@Composable
-fun
+}}}
