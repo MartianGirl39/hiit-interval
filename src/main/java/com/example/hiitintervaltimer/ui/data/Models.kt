@@ -27,8 +27,7 @@ class WorkoutModel(var id: Int, var name: String, var desc: String, var function
     }
 }
 
-abstract class IntervalModel(var name: String, var desc: String, var value: Int, var delay: Int, var order: Int) {
-
+abstract class IntervalModel(var name: String, var desc: String, var value: Int, var delay: Int, var order: Int, var repDuration) {
     abstract fun mapsTo():String
     abstract fun mapRowToUInterval(cursor: Cursor): IntervalModel
 }
@@ -46,6 +45,7 @@ class TimedInterval(name: String, desc: String, value: Int, delay: Int, order: I
         this.value = cursor.getInt(cursor.getColumnIndexOrThrow("value"))
         this.delay = cursor.getInt(cursor.getColumnIndexOrThrow("delay"))
         this.order = cursor.getInt(cursor.getColumnIndexOrThrow("order"))
+        this.repDuration = cursor.getInt(cursor.getColumnIndexOrThrow("duration"))
         return this
     }
 }

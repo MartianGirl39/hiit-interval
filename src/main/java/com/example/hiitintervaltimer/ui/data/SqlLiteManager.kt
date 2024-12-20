@@ -33,7 +33,8 @@ class SqlLiteManager(context: Context) :
                 "description VARCHAR(300)",
                 "count INTEGER",
                 "delay INTEGER",
-                "order INTEGER"
+                "order INTEGER",
+                "duration INTEGER"
             )
         )
         private val INTERVAL_MODEL_MAPPING = mapOf(

@@ -85,3 +85,26 @@ fun addInterval(navController: NavController, db: SqlLiteManager, modifier: Modi
         }
     }
 }
+
+@Composable
+TimedIntervalForm() {
+    var name by remember { mutableStateOf("New Interval") }
+    var desc by remember { mutableStateOf("This is an empty interval") }
+    var type by remember { mutableStateOf(INTERVAL_TYPE.TIMED) }
+    var value by remember { mutableIntStateOf(0) }
+    var valueIdentifier by remember { mutableStateOf("Time") }
+    var delay by remember { mutableIntStateOf(0) }
+    var window by remember { mutableIntStateOf(0) }
+}
+
+@Composable
+CountedIntervalForm() {
+    var name by remember { mutableStateOf("New Interval") }
+    var desc by remember { mutableStateOf("This is an empty interval") }
+    var type by remember { mutableStateOf(INTERVAL_TYPE.TIMED) }
+    var value by remember { mutableIntStateOf(0) }
+    var valueIdentifier by remember { mutableStateOf("Time") }
+    var delay by remember { mutableIntStateOf(0) }
+    var repSpeed by remember { mutableIntState(0) }
+    var window by remember { mutableIntStateOf(0) }
+}
