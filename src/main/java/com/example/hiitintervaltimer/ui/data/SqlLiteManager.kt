@@ -206,12 +206,12 @@ class SqlLiteManager(context: Context) :
         return workout
     }
 
-    fun addInterval(interval: IntervalModel, id: Int): Unit {
+    fun appendInterval(interval: IntervalModel, id: Int): Unit {
         val workout = getWorkout(id)
         val order = workout.interval.size() + 1
         val = """
-            INSERT INTO ${interval.mapsTo} (${INTERVAL_TYPES[Interval.mapsTo()]?.joinToString(", ") { "$it = ?" }}) VALUES 
-            (${INTERVAL_TYPES.get(Interval.mapsTo(){"?,"})} ?);
+            INSERT INTO ${interval.mapsTo} (workout, ${INTERVAL_TYPES[Interval.mapsTo()]?.joinToString(", ") { "$it = ?" }}) VALUES 
+            ($id, ${INTERVAL_TYPES.get(Interval.mapsTo(){"?,"})} ?);
         """.trimIndent()
         val statement = db.compileStatement(insertInterval)
         bindIntervalModelValuesToStatement(statement, interval)
@@ -232,6 +232,20 @@ class SqlLiteManager(context: Context) :
         }
         cursor.close()
         return workouts
+    }
+
+    fun getIntervalByWorkoutAndOrder(id: Int, order: Int) : IntervalModel? {
+        //check every interval in list and when one is found return an interval of the appropriate type
+        for (interval in INTERVAL_TYPES.keys) {
+            val sql = "SELECT * FROM $interval WHERE id = ? AND order = ?"
+            val cursor = db.rawQuery(sql, arrayOf(id, order))
+            if (cursor.moveToFirst()) {
+                val interval = INTERVAL_MODEL_MAPPING[interval]
+                interval.mapRowToInterval(cursor)
+                return interval
+            }
+        }
+        return null
     }
 
     private fun getIntervalsForWorkout(workoutId: Int): List<IntervalModel> {

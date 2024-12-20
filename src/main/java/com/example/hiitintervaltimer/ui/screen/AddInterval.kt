@@ -1,7 +1,7 @@
 @Composable
 fun addInterval(navController: NavController, db: SqlLiteManager, id: Int, order: Int, modifier: Modifier, ) {
-    // grab the current interval by workout id and order
-    var type by remember { mutableStateOf(INTERVAL_TYPE.TIMED) }
+    var interval = db.getIntervalByWorkoutAndOrder(id, order)
+    var type by remember { mutableStateOf(if (interval) interval.typeelsenull) }
 
     Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -18,8 +18,8 @@ fun addInterval(navController: NavController, db: SqlLiteManager, id: Int, order
                 )   // for interval type
             } else {
                 when(type) {
-                    INTERVAL_TYPE.TIMED -> TimedIntervalForm({submitted -> db.appendInterval(submitted, id)}, {navController.navigate("home")})
-                    INTERVAL_TYPE.COUNTED -> CountedIntervalForm({submitted -> db.appendInterbal(submitted, id)}, {navController.navigate("home")})
+                    INTERVAL_TYPE.TIMED -> TimedIntervalForm({submitted -> db.appendInterval(submitted, id)}, {navController.navigate("home")}, interval)
+                    INTERVAL_TYPE.COUNTED -> CountedIntervalForm({submitted -> db.appendInterbal(submitted, id)}, {navController.navigate("home")}, interval)
                 }
             }
         }
@@ -28,12 +28,12 @@ fun addInterval(navController: NavController, db: SqlLiteManager, id: Int, order
 
 // need to make all values able to initilatzw
 @Composable
-TimedIntervalForm(onSubmit: (submitted: TimedInterval -> Unit, onCancel: () -> Unit) {
-    var name by remember { mutableStateOf("New Interval") }
-    var desc by remember { mutableStateOf("This is an empty interval") }
+TimedIntervalForm(onSubmit: (submitted: TimedInterval -> Unit, onCancel: () -> Unit, interval: IntervalModel?) {
+    var name by remember { mutableStateOf(if (interval) interval.nameelse"New Interval") }
+    var desc by remember { mutableStateOf(if (interval) interval.desc :"This is an empty interval") }
     var time by remember { mutableIntStateOf(0) }
-    var delay by remember { mutableIntStateOf(0) }
-    val order = -1 // this will be passed by parameter
+    var delay by remember { mutableIntStateOf(if (interval) interval.valueelse0) }
+    val order = by remember { mutableIntStateOf(if (interval) interval.orderelse-1) }
     var window by remember { mutableIntStateOf(0) }
     val input = listOf(
         InputWindow("",
@@ -81,13 +81,13 @@ TimedIntervalForm(onSubmit: (submitted: TimedInterval -> Unit, onCancel: () -> U
 }
 
 @Composable
-CountedIntervalForm() {
-    var name by remember { mutableStateOf("New Interval") }
-    var desc by remember { mutableStateOf("This is an empty interval") }
-    var count by remember { mutableIntStateOf(0) }
-    var delay by remember { mutableIntStateOf(0) }
-    var repSpeed by remember { mutableIntState(0) }
-    var order = -1
+CountedIntervalForm(submitted: TimedInterval -> Unit, onCancel: () -> Unit, interval: IntervalModel?) {
+    var name by remember { mutableStateOf(if (interval) interval.name else "New Interval") }
+    var desc by remember { mutableStateOf(if (interval) interval.desc :"This is an empty interval") }
+    var time by remember { mutableIntStateOf(0) }
+    var delay by remember { mutableIntStateOf(if (interval) interval.valueelse0) }
+    val order = by remember { mutableIntStateOf(if (interval) interval.orderelse-1) }
+    var repSpeed by remember { mutableIntState(if (interval) interval.duration: 0) }
     var window by remember { mutableIntStateOf(0) }
     val input = listOf(
         InputWindow("",
