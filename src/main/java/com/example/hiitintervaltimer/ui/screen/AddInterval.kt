@@ -22,8 +22,8 @@ import com.example.hiitintervaltimer.ui.commons.InputWindow
 import com.example.hiitintervaltimer.ui.commons.MultipleChoiceField
 import com.example.hiitintervaltimer.ui.commons.TextField
 import com.example.hiitintervaltimer.ui.commons.Confirmation
-import com.example.hiitintervaltimer.ui.commons.Form
 import com.example.hiitintervaltimer.ui.commons.IntegerField
+import com.example.hiitintervaltimer.ui.commons.MultiWindowForm
 import com.example.hiitintervaltimer.ui.data.CountedInterval
 import com.example.hiitintervaltimer.ui.data.INTERVAL_OPTION
 import com.example.hiitintervaltimer.ui.data.IntervalModel
@@ -45,14 +45,14 @@ fun AddInterval(navController: NavController, db: SqlLiteManager, id: Int, order
                 MultipleChoiceField(
                     "Interval Type",
                     { submitted ->
-                        type = INTERVAL_OPTION.valueOf(submitted)
+                        type = submitted as INTERVAL_OPTION
                     },
-                    INTERVAL_OPTION.entries.map { it.name }
+                    INTERVAL_OPTION.entries.map { it }
                 )   // for interval type
             } else {
                 when(type) {
-                    INTERVAL_OPTION.TIMED -> TimedIntervalForm({ submitted -> if(id > -1) db.updateIntervalInDb(submitted, id) else db.appendInterval(submitted, id)}, {navController.navigate("home")}, interval)
-                    INTERVAL_OPTION.COUNTED -> CountedIntervalForm({submitted -> if(id > -1) db.updateIntervalInDb(submitted, id) else db.appendInterval(submitted, id)}, {navController.navigate("home")}, interval as CountedInterval?)
+                    INTERVAL_OPTION.TIMED -> TimedIntervalForm({ submitted -> if(id > -1) db.updateIntervalInDb(submitted, id.toLong()) else db.appendInterval(submitted, id)}, {navController.navigate("home")}, interval)
+                    INTERVAL_OPTION.COUNTED -> CountedIntervalForm({submitted -> if(id > -1) db.updateIntervalInDb(submitted, id.toLong()) else db.appendInterval(submitted, id)}, {navController.navigate("home")}, interval as CountedInterval?)
                     null -> navController.navigate("home")
                 }
             }
@@ -61,7 +61,7 @@ fun AddInterval(navController: NavController, db: SqlLiteManager, id: Int, order
 }
 
 @Composable
-fun TimedIntervalForm(onSubmit: (interval: TimedInterval) -> Unit, onCancel: () -> Unit, interval: IntervalModel?) {
+fun TimedIntervalForm(submit: (interval: TimedInterval) -> Unit, onCancel: () -> Unit, interval: IntervalModel?) {
     val id = interval?.id ?: -1;
     var name by remember { mutableStateOf(interval?.name ?: "New Interval") }
     var desc by remember { mutableStateOf(interval?.desc ?: "This is an empty interval") }
@@ -71,32 +71,34 @@ fun TimedIntervalForm(onSubmit: (interval: TimedInterval) -> Unit, onCancel: () 
     var window by remember { mutableIntStateOf(0) }
     val inputs = listOf(
         InputWindow("",
-            TextField(
-                "Interval Name",
-                { submitted -> name = submitted; window += 1},
-                name
-            )),
+            {
+                TextField(
+                    "Interval Name",
+                    { submitted -> name = submitted; window += 1},
+                    name
+                )
+            }),
         InputWindow("",
-            TextField(
+            {TextField(
                 "Interval Description",
                 { submitted -> desc = submitted; window += 1},
                 desc
-            )),
+            )}),
         InputWindow("",
-            ClockField(
+            {ClockField(
                 "Count Down",
                 { submitted -> time = submitted; window += 1 },
                 time
-            )),
+            )}),
         InputWindow("Sometimes you can't immediately go on to the next thing. Sometime it takes time. This is your chance to take the matter into your own hands. Insert a delay after the interval to give you time to prepare for the next!",
-            IntegerField(
+            {IntegerField(
                 "Delay Before Next Interval",
                 { submitted -> delay = submitted; window += 1 },
                 delay.toString()
-            )),
+            )}),
         InputWindow("",
-            Confirmation(
-                { onSubmit(TimedInterval(id, name, desc, time, delay, order)) },
+            {Confirmation(
+                { submit(TimedInterval(id, name, desc, time, delay, order)) },
                 { onCancel() },
                 { field ->
                     when (field) {
@@ -113,17 +115,16 @@ fun TimedIntervalForm(onSubmit: (interval: TimedInterval) -> Unit, onCancel: () 
                     "Count Down" to time.toString(),
                     "Delay" to delay.toString()
                 )
-            ))
+            )})
     )
 
     Column {
-        val input = inputs[window]
-        Form(input.help, { input.view })
+        MultiWindowForm("", inputs, Modifier)
     }
 }
 
 @Composable
-fun CountedIntervalForm(onSubmit: (submitted: TimedInterval) -> Unit, onCancel: () -> Unit, interval: CountedInterval?) {
+fun CountedIntervalForm(submit: (submitted: CountedInterval) -> Unit, onCancel: () -> Unit, interval: CountedInterval?) {
     val id = interval?.id ?: -1;
     var name by remember { mutableStateOf(interval?.name ?: "New Interval") }
     var desc by remember { mutableStateOf(interval?.desc ?: "This is an empty interval") }
@@ -134,38 +135,38 @@ fun CountedIntervalForm(onSubmit: (submitted: TimedInterval) -> Unit, onCancel: 
     var window by remember { mutableIntStateOf(0) }
     val inputs = listOf(
         InputWindow("",
-            TextField(
+            {onSubmit: ()-> Unit -> TextField(
                 "Interval Name",
-                { submitted -> name = submitted; window += 1},
+                { submitted -> name = submitted; window += 1; onSubmit()},
                 name
-            )),
+            )}),
         InputWindow("",
-            TextField(
+            {onSubmit: ()-> Unit -> TextField(
                 "Interval Description",
-                { submitted -> desc = submitted; window += 1},
+                { submitted -> desc = submitted; window += 1; onSubmit()},
                 desc
-            )),
+            )}),
         InputWindow("",
-            ClockField(
+            {onSubmit: ()-> Unit -> ClockField(
                 "Rep Count",
-                { submitted -> count = submitted; window += 1 },
+                { submitted -> count = submitted; window += 1; onSubmit() },
                 count
-            )),
+            )}),
         InputWindow("Sometimes you can't immediately go on to the next thing. Sometime it takes time. This is your chance to take the matter into your own hands. Insert a delay after the interval to give you time to prepare for the next!",
-            IntegerField(
+            {onSubmit: ()-> Unit -> IntegerField(
                 "Delay Before Next Interval",
-                { submitted -> delay = submitted; window += 1 },
+                { submitted -> delay = submitted; window += 1; onSubmit()},
                 delay.toString()
-            )),
+            )}),
         InputWindow("",
-            IntegerField(
+            {onSubmit: ()-> Unit -> IntegerField(
                 "Rep Duration",
-                { submitted -> repSpeed = submitted; window += 1 },
+                { submitted -> repSpeed = submitted; window += 1; onSubmit() },
                 repSpeed.toString()
-            )),
+            )}),
                 InputWindow("",
-        Confirmation(
-            {CountedInterval(id, name, desc, count, delay, repSpeed, order)},
+        {Confirmation(
+            {submit(CountedInterval(id, name, desc, count, delay, repSpeed, order))},
             {onCancel()},
             {field -> when(field) {
                 "Name" -> window = 0;
@@ -175,11 +176,11 @@ fun CountedIntervalForm(onSubmit: (submitted: TimedInterval) -> Unit, onCancel: 
                 "Rep Duration" -> window = 4
             }},"",
             mapOf("Name" to name.toString(), "Description" to desc.toString(), "Rep Count" to count.toString(), "Delay" to delay.toString(), "Rep Duration" to repSpeed.toString())
-        ))
+        )})
     )
 
     Column {
         val input = inputs[window]
-        Form(input.help, { input.view })
+        MultiWindowForm("", inputs, Modifier)
     }
 }

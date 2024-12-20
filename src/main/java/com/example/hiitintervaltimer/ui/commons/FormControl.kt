@@ -1,16 +1,16 @@
 package com.example.hiitintervaltimer.ui.commons
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -23,39 +23,45 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavController
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
+import java.util.Locale
 
-data class InputWindow(val help: String, val view: Unit)
 
 @Composable
 fun TextField(fieldName: String, onNext: (submitted: String) -> Unit, workoutName: String) {
     var name by remember { mutableStateOf(workoutName) }
-    Column {
-        OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text(fieldName) },
-            placeholder = { Text("Enter $fieldName Here: ") }
-        )
-        IconButton(
-            onClick = { onNext(workoutName) },
-        ) {
-            Icon(Icons.Default.Check, contentDescription = "Next", tint = Color.White)
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text(fieldName) },
+                placeholder = { Text("Enter $fieldName Here: ") },
+            )
+            IconButton(
+                onClick = {
+                    onNext(name)
+                },
+//            colors = IconButtonColors(containerColor = Color.White, contentColor = Color.Black, disabledContentColor = Color.Gray, disabledContainerColor = Color.LightGray)
+            ) {
+                Icon(Icons.Default.Check, contentDescription = "Next", tint = Color.Black)
+            }
         }
     }
 }
 
 @Composable
-fun MultipleChoiceField(name: String, onNext: (choice: String) -> Unit, fields: List<String>) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+fun MultipleChoiceField(name: String, onNext: (choice: Enum<*>) -> Unit, fields: List<Enum<*>>) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
         for (field in fields) {
             OutlinedButton(onClick = { onNext(field) }) {
-                Text(field)
+                Text(field.toString().split("_").joinToString { " " }.lowercase().capitalize(Locale.ROOT), color=Color.Black)
             }
         }
     }
@@ -137,7 +143,7 @@ fun ClockField(name: String, onNext: (submitted: Int) -> Unit, timeInSeconds: In
 
 
 @Composable
-fun Form(help: String, input: @Composable () -> Unit) {
+fun Field(help: String, input: @Composable (onSubmit: () -> Unit) -> Unit, postSubmit: () -> Unit) {
     val openAlertDialog = remember { mutableStateOf(false) }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -153,7 +159,7 @@ fun Form(help: String, input: @Composable () -> Unit) {
                 dialogText = help
             )
         }
-        input()
+        input(postSubmit)
     }
 }
 
@@ -161,13 +167,20 @@ fun Form(help: String, input: @Composable () -> Unit) {
 fun HelpDialog(onConfirmation: () -> Unit, dialogText: String) {
     AlertDialog(
         onDismissRequest = { onConfirmation() },
-        icon = { Icon(Icons.Default.Info, contentDescription = "Info", tint = Color.Black) },
-        text = { Text(text = dialogText) },
+        icon = { Icon(Icons.Default.Info, contentDescription = "Info", tint = Color.White) },
+        text = { Text(text = dialogText, color = Color.White) },
         confirmButton = {
-            TextButton(onClick = { onConfirmation() }) {
+            TextButton(
+                onClick = { onConfirmation() },
+                colors = ButtonDefaults.textButtonColors(
+                    containerColor = Color.White,
+                    contentColor = Color.White
+                )
+            ) {
                 Text("Ok")
             }
-        }
+        },
+        containerColor = Color.Black
     )
 }
 
@@ -193,14 +206,16 @@ fun Confirmation(onConfirmation: () -> Unit, onCancel: () -> Unit, onUpdate: (fi
 }
 
 @Composable
-fun MultiWindowForm(navController: NavController, name: String, inputs: List<InputWindow>, modifier: Modifier, ) {
+fun MultiWindowForm(name: String, inputs: List<InputWindow>, modifier: Modifier) {
     var window by remember { mutableIntStateOf(0) }
+    var input by remember { mutableStateOf(inputs[window]) }
 
-    Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
+    Box{
         Column(modifier = Modifier.padding(16.dp)) {
             Text(name, color = Color.White)
-            val input = inputs[window]
-            Form(input.help, { input.view })
+            Field(input.help, input.view, postSubmit = { window = minOf(window+1, inputs.size); input = inputs[window]; })
+            Text(window.toString())
+            Text(input.toString())
         }
     }
 }

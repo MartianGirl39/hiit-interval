@@ -68,7 +68,7 @@ fun Workout(navController: NavHostController, db: SqlLiteManager, id: Int) {
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "Start com.example.hiitintervaltimer.ui.screen.Workout")
+                Text(text = "Workout")
             }
         } else {
             Text("workout not found", style = MaterialTheme.typography.headlineSmall)

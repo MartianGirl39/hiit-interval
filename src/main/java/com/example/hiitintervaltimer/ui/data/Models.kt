@@ -26,8 +26,8 @@ class WorkoutModel(var id: Int, var name: String, var desc: String, var function
         return this;
     }
 
-    fun setIntervals(submitted: List<IntervalModel>) {
-    this.intervals = submitted
+    fun updateIntervals(submitted: List<IntervalModel>) {
+        this.intervals = submitted
     }
 }
 

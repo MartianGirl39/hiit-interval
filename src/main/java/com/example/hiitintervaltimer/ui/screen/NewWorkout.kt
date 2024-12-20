@@ -16,7 +16,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -36,68 +35,90 @@ import com.example.hiitintervaltimer.ui.data.WORKOUT_FUNCTION
 import com.example.hiitintervaltimer.ui.data.WorkoutModel
 
 @Composable
-fun NewWorkout(navController: NavController, db: SqlLiteManager, id: Int, modifier: Modifier, ) {
+fun NewWorkout(navController: NavController, db: SqlLiteManager, id: Int, modifier: Modifier) {
     val workout = db.getWorkout(id)
     var workoutName by remember { mutableStateOf("New Workout") }
     var workoutDesc by remember { mutableStateOf("This is an empty workout") }
     var workoutFunction by remember { mutableStateOf(WORKOUT_FUNCTION.WORKOUT) }
-    var window by remember { mutableIntStateOf(0) }
+    val max = 3
 
     val inputs = arrayListOf(
         InputWindow(
-            "This field is used for users, like you, to distinguish one workout from another. You may also hear your voice assistance mention this name before your workout starts.",
+            "This field is used for users, like you, to distinguish one workout from another. You may also hear your voice assistance mention this name before your workout starts."
+        ) { onSubmit: () -> Unit ->
             TextField(
                 "Workout Name",
-                { submitted -> workoutName = submitted; window += 1 },
+                { submitted ->
+                    workoutName = submitted;  onSubmit()
+                },
                 workoutName
             )
-        ),
+        },
         InputWindow(
-            "This field describes your workout so you know extactly what your doing",
+            "This field describes your workout so you know exactly what you're doing"
+        ) { onSubmit: () -> Unit ->
             TextField(
                 "Description",
-                { submiited -> workoutDesc = submiited; window += 1 },
+                { submitted ->
+                    workoutDesc = submitted; onSubmit()
+                },
                 workoutDesc
             )
-        ),
-        InputWindow("This field tells both you and the app what this workout function is. Your choices are warm up, cool down, and workout, this allows easy access and workout plan building, as you can select a warm up, workout and cool down to play in order",
+        },
+        InputWindow(
+            "This field tells both you and the app what this workout function is. Your choices are warm up, cool down, and workout, this allows easy access and workout plan building, as you can select a warm up, workout, and cool down to play in order"
+        ) { onSubmit: () -> Unit ->
             MultipleChoiceField(
                 "Workout Function",
-                { submitted -> workoutFunction = WORKOUT_FUNCTION.valueOf(submitted); window += 1 },
-                WORKOUT_FUNCTION.values().map { it.name } // Maps enum to list of string values
-            )),
-        InputWindow("This window is asking you to confirm your choices. Review the values in the window and press confirm to continue",
-            Confirmation(
-                {
-                val workoutId = db.addWorkout(WorkoutModel(id, workoutName, workoutDesc, workoutFunction, emptyList<IntervalModel>()))
-                navController.navigate("workout/add/${workoutId}")
-            },
-            {
-                navController.navigate("home")
-            },
-                { field: String ->
-                    window = when (field) {
-                        "Name" -> 0
-                        "Description" -> 1
-                        "Function" -> 2
-                        else -> window
-                    }
-                },"",
-                mapOf(
-                    "Name" to workoutName,
-                    "Description" to workoutDesc,
-                    "Function" to workoutFunction.value
-                )
-            )))
+                { submitted ->
+                    workoutFunction = submitted as WORKOUT_FUNCTION;  onSubmit()
+                },
+                WORKOUT_FUNCTION.entries.map { it }
+            )
+        },
+//        InputWindow(
+//            "This window is asking you to confirm your choices. Review the values in the window and press confirm to continue",
+//            {
+//                Confirmation(
+//                    {
+//                        val workoutId = db.addWorkout(WorkoutModel(id, workoutName, workoutDesc, workoutFunction, emptyList<IntervalModel>()))
+//                        navController.navigate("workout/add/${workoutId}")
+//                    },
+//                    {
+//                        navController.navigate("home")
+//                    },
+//                    { field: String ->
+//                        window = when (field) {
+//                            "Name" -> 0
+//                            "Description" -> 1
+//                            "Function" -> 2
+//                        }
+//                    },
+//                    "",
+//                    mapOf(
+//                        "Name" to workoutName,
+//                        "Description" to workoutDesc,
+//                        "Function" to workoutFunction.value
+//                    )
+//                )
+//            }
+//        )
+    )
 
     if (id > -1) {
-        inputs.add(InputWindow("", UpdateInterval(navController, {submitted -> workout?.setIntervals(submitted)}, workout?.intervals ?: emptyList())))
+        inputs.add(InputWindow("",
+            { UpdateInterval(navController, { submitted -> workout?.updateIntervals(submitted) }, workout?.intervals ?: emptyList()) }))
     }
 
+    // Render only the current input window based on 'window'
     Column {
-        MultiWindowForm(navController, if(id > -1 ) "Update Workout" else "Create Workout", inputs, Modifier)
+        // Use the window value to decide which input to render
+        MultiWindowForm("", inputs, Modifier)
+//        Text("$window")  // Show the current window index for debugging
     }
 }
+
+
 
 @Composable
 fun DraggableItem(interval: IntervalModel, onLongPress: () -> Unit, onDragMoved: (Int) -> Unit) {
