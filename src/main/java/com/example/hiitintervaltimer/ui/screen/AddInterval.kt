@@ -1,16 +1,18 @@
 @Composable
-fun addInterval(navController: NavController, db: SqlLiteManager, modifier: Modifier, id: Int) {
-    val workout = db.getWorkout(id)
+fun addInterval(navController: NavController, db: SqlLiteManager, id: Int, order: Int, modifier: Modifier, ) {
+    // grab the current interval by workout id and order
+    var type by remember { mutableStateOf(INTERVAL_TYPE.TIMED) } //
 
-    // Local states
-    var name by remember { mutableStateOf("New Interval") }
-    var desc by remember { mutableStateOf("This is an empty interval") }
-    var type by remember { mutableStateOf(INTERVAL_TYPE.TIMED) }
-    var value by remember { mutableIntStateOf(0) }
-    var valueIdentifier by remember { mutableStateOf("Time") }
-    var delay by remember { mutableIntStateOf(0) }
-    var window by remember { mutableIntStateOf(0) }
-
+    Column {
+        if (type == null) {
+            MutliChoiceField("");   // for interval type
+        } else {
+            when(type) {
+                INTERVAL_TYPE.TIMED -> TimedIntervalForm()
+                INTERVAL_TYPE.COUNTED -> CountedIntervalForm()
+            }
+        }
+    }
     // Input windows list
     val inputs = listOf(
         InputWindow(
@@ -76,7 +78,7 @@ fun addInterval(navController: NavController, db: SqlLiteManager, modifier: Modi
         )
     )
 
-    // Display UI with the inputs list
+    // if
     Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Add Intervals To ${workout.name}", color = Color.White)
@@ -90,9 +92,7 @@ fun addInterval(navController: NavController, db: SqlLiteManager, modifier: Modi
 TimedIntervalForm() {
     var name by remember { mutableStateOf("New Interval") }
     var desc by remember { mutableStateOf("This is an empty interval") }
-    var type by remember { mutableStateOf(INTERVAL_TYPE.TIMED) }
     var value by remember { mutableIntStateOf(0) }
-    var valueIdentifier by remember { mutableStateOf("Time") }
     var delay by remember { mutableIntStateOf(0) }
     var window by remember { mutableIntStateOf(0) }
 }
@@ -101,9 +101,7 @@ TimedIntervalForm() {
 CountedIntervalForm() {
     var name by remember { mutableStateOf("New Interval") }
     var desc by remember { mutableStateOf("This is an empty interval") }
-    var type by remember { mutableStateOf(INTERVAL_TYPE.TIMED) }
     var value by remember { mutableIntStateOf(0) }
-    var valueIdentifier by remember { mutableStateOf("Time") }
     var delay by remember { mutableIntStateOf(0) }
     var repSpeed by remember { mutableIntState(0) }
     var window by remember { mutableIntStateOf(0) }

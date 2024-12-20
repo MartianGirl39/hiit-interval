@@ -44,30 +44,30 @@ import com.example.hiitintervaltimer.ui.data.WORKOUT_FUNCTION
 import com.example.hiitintervaltimer.ui.data.WorkoutModel
 
 @Composable
-fun NewWorkout(navController: NavController, db: SqlLiteManager, modifier: Modifier) {
+fun NewWorkout(navController: NavController, db: SqlLiteManager, id: id, modifier: Modifier, ) {
     var workoutName by remember { mutableStateOf("New Workout") }
     var workoutDesc by remember { mutableStateOf("This is an empty workout") }
     var workoutFunction by remember { mutableStateOf(WORKOUT_FUNCTION.WORKOUT) }
     var window by remember { mutableIntStateOf(0) }
 
-    val inputs = listOf(
-        InputWindow("This field is used for users, like you, to distinguish one workout from another. You may also hear your voice assistance mention this name before your workout starts.",
-            TextField("Workout Name",
-                { submitted -> workoutName = submitted; window+=1},
-                workoutName
-            )),
-        InputWindow("This field describes your workout so you know extactly what your doing",
-            TextField("Description",
-                { submiited -> workoutDesc = submiited; window+=1 },
-                workoutDesc))),
-        InputWindow("This field tells both you and the app what this workout function is. Your choices are warm up, cool down, and workout, this allows easy access and workout plan building, as you can select a warm up, workout and cool down to play in order",
-            MultipleChoiceField(
+    MultiWindowForm(navController, id > -1 ? "Update Workout" : "Create Workout", listOf(
+            InputWindow("This field is used for users, like you, to distinguish one workout from another. You may also hear your voice assistance mention this name before your workout starts.",
+                TextField("Workout Name",
+                    { submitted -> workoutName = submitted; window+=1},
+                    workoutName
+                )),
+    InputWindow("This field describes your workout so you know extactly what your doing",
+        TextField("Description",
+            { submiited -> workoutDesc = submiited; window+=1 },
+            workoutDesc))),
+    InputWindow("This field tells both you and the app what this workout function is. Your choices are warm up, cool down, and workout, this allows easy access and workout plan building, as you can select a warm up, workout and cool down to play in order",
+        MultipleChoiceField(
             "Workout Function",
             { submitted -> workoutFunction = WORKOUT_FUNCTION.valueOf(submitted); window += 1 },
             WORKOUT_FUNCTION.values().map { it.name } // Maps enum to list of string values
         ))
-        InputWindow("This window is asking you to confirm your choices. Review the values in the window and press confirm to continue",
-            Confirmation({
+    InputWindow("This window is asking you to confirm your choices. Review the values in the window and press confirm to continue",
+        Confirmation({
             val id = db.addWorkout(db)
             navController.navigate("workout/add/${id}")
         }
@@ -75,19 +75,11 @@ fun NewWorkout(navController: NavController, db: SqlLiteManager, modifier: Modif
             navController.navigate("home")
         }
         {
-            field -> {
-                if(field == "Name") window = 0
-                else if(field == "Description") window = 1
-                else if(field == "Function") window = 2
+                field -> {
+            if(field == "Name") window = 0
+            else if(field == "Description") window = 1
+            else if(field == "Function") window = 2
         }
             mapOf("Name" to workoutName, "Description" tp workoutDesc, "Function" to workoutFunction.value)
-        }))
-
-    Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Create Workout", color = Color.White)
-            val input = inputs[window]
-            Form(input.help, input.view)
-        }
-    }
+        })))
 }

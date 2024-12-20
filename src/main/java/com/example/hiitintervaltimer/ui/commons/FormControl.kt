@@ -204,3 +204,16 @@ fun Confirmation(onConfirmation: () -> Unit, onCancel() -> Unit, onUpdate(field:
         }
     }
 }
+
+@Composable
+fun MultiWindowForm(navController: NavController, name: String, inputs: List<InputWindow>, modifier: Modifier, ) {
+    var window by remember { mutableIntStateOf(0) }
+
+    Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(name, color = Color.White)
+            val input = inputs[window]
+            Form(input.help, input.view)
+        }
+    }
+}
