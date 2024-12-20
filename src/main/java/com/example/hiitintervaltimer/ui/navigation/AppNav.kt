@@ -20,6 +20,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.hiitintervaltimer.ui.screen.Home
 import com.example.hiitintervaltimer.ui.data.SqlLiteManager
+import com.example.hiitintervaltimer.ui.screen.AddInterval
 import com.example.hiitintervaltimer.ui.screen.NewWorkout
 import com.example.hiitintervaltimer.ui.screen.PlayWorkout
 import com.example.hiitintervaltimer.ui.screen.Workout
@@ -40,9 +41,22 @@ fun AppNav(context: Context) {
             val workoutId = backStackEntry.arguments?.getInt("id") ?: -1
             Workout(navController = navController, db = SqlLiteManager(context = context), id = workoutId)
         }
-        composable("create") {
-            NewWorkout(navController = navController, db = db, modifier = Modifier)
+        composable("workout/create") {
+            NewWorkout(navController = navController, db = db, id=-1, modifier = Modifier)
         }
+        composeable(
+            route = 'workout/{id}/interval/{order}',
+            arguments = listOf(navArgument("id") { type = NavType.IntType }){ backStackEntry ->
+                val workoutId = backStackEntry.arguments?.getInt("id") ? : navController.navidate("/workout/create")
+                val intervalOrder = backStackEntry.arguments?.getInt("order") ? -1
+                AddInterval(navController = navController, db=db, id=workoutId, order=intervalOrder, modifer=Modifer)
+            }
+        composable(
+            route = "worokout/{id}/update"),
+            arguments = listOf(navArgument("id") { type = NavType.IntType }){ backStackEntry ->
+                val workoutId = backStackEntry.arguments?.getInt("id") ? : navController.navidate("/workout/create")
+                NewWorkout(navController = navController, db=db, id=workoutId, modifer=Modifer)
+            }
         composable(
             route = "play/{id}",
             arguments = listOf(navArgument("id") { type = NavType.IntType })
@@ -50,6 +64,12 @@ fun AppNav(context: Context) {
             val workoutId = backStackEntry.arguments?.getInt("id") ?: -1
             PlayWorkout(navController = navController, db = SqlLiteManager(context), id = workoutId)
         }
+        composeable(
+            route = 'workout/{id}/update/interval',
+            arguments = listOf(navArgument("id") { type = NavType.IntType }){ backStackEntry ->
+                val workoutId = backStackEntry.arguments?.getInt("id") ? : navController.navidate("/workout/create")
+                AddInterval(navController = navController, db=db, id=workoutId, modifer=Modifer)
+            }
     }
     Button(
         onClick = { navController.navigate("create") },

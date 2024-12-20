@@ -25,18 +25,22 @@ class WorkoutModel(var id: Int, var name: String, var desc: String, var function
         this.function = WORKOUT_FUNCTION.valueOf(cursor.getString(cursor.getColumnIndexOrThrow("plan_function")))
         return this;
     }
+
+    fun setIntervals(submitted: List<IntervalModel>) {
+    this.intervals = submitted
+    }
 }
 
-abstract class IntervalModel(var name: String, var desc: String, var value: Int, var delay: Int, var order: Int) {
-
-    abstract fun mapsTo():String
+abstract class IntervalModel(var id: Int, var name: String, var desc: String, var value: Int, var delay: Int, var order: Int) {
+    abstract fun mapsTo(function: () -> String):String
     abstract fun mapRowToUInterval(cursor: Cursor): IntervalModel
+    abstract fun mapsToType(): INTERVAL_OPTION
 }
 
-class TimedInterval(name: String, desc: String, value: Int, delay: Int, order: Int) : IntervalModel(name, desc, value, delay, order) {
+class TimedInterval(id: Int, name: String, desc: String, value: Int, delay: Int, order: Int) : IntervalModel(id, name, desc, value, delay, order) {
     private final val mapsToTable: INTERVAL_OPTION = INTERVAL_OPTION.TIMED
 
-    override fun mapsTo(): String {
+    override fun mapsTo(function: () -> String): String {
         return mapsToTable.value
     }
 
@@ -46,13 +50,18 @@ class TimedInterval(name: String, desc: String, value: Int, delay: Int, order: I
         this.value = cursor.getInt(cursor.getColumnIndexOrThrow("value"))
         this.delay = cursor.getInt(cursor.getColumnIndexOrThrow("delay"))
         this.order = cursor.getInt(cursor.getColumnIndexOrThrow("order"))
+
         return this
+    }
+
+    override fun mapsToType(): INTERVAL_OPTION {
+        return INTERVAL_OPTION.TIMED
     }
 }
 
-class CountedInterval(name: String, desc: String, value: Int, delay: Int, order: Int) : IntervalModel(name, desc, value, delay, order) {
+class CountedInterval(id: Int, name: String, desc: String, value: Int, delay: Int, order: Int, var duration: Int) : IntervalModel(id, name, desc, value, delay, order) {
     private final val mapsToTable: INTERVAL_OPTION = INTERVAL_OPTION.COUNTED
-    override fun mapsTo(): String {
+    override fun mapsTo(function: () -> String): String {
         return mapsToTable.value
     }
 
@@ -62,7 +71,12 @@ class CountedInterval(name: String, desc: String, value: Int, delay: Int, order:
         this.value = cursor.getInt(cursor.getColumnIndexOrThrow("value"))
         this.delay = cursor.getInt(cursor.getColumnIndexOrThrow("delay"))
         this.order = cursor.getInt(cursor.getColumnIndexOrThrow("order"))
+        this.duration = cursor.getInt(cursor.getColumnIndexOrThrow("duration"))
         return this
+    }
+
+    override fun mapsToType(): INTERVAL_OPTION {
+        return INTERVAL_OPTION.COUNTED
     }
 }
 

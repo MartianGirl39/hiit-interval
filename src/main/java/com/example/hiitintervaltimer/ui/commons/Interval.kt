@@ -16,7 +16,7 @@ import com.example.hiitintervaltimer.ui.data.TimedInterval
 
 @Composable
 fun IntervalList(intervals: List<IntervalModel>) {
-    intervals.forEachIndexed { index, interval ->
+    intervals.forEach { interval ->
         when (interval) {
             is TimedInterval -> IntervalCard(interval)
             is CountedInterval -> IntervalCard(interval)

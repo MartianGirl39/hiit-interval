@@ -1,25 +1,18 @@
 package com.example.hiitintervaltimer.ui.screen
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -29,281 +22,151 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import com.example.hiitintervaltimer.ui.data.SqlLiteManager
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.PopupProperties
-import com.example.hiitintervaltimer.ui.commons.IntervalList
-import com.example.hiitintervaltimer.ui.data.INTERVAL_OPTION
+import com.example.hiitintervaltimer.ui.commons.InputWindow
+import com.example.hiitintervaltimer.ui.commons.MultipleChoiceField
+import com.example.hiitintervaltimer.ui.commons.TextField
+import com.example.hiitintervaltimer.ui.commons.Confirmation
+import com.example.hiitintervaltimer.ui.commons.MultiWindowForm
 import com.example.hiitintervaltimer.ui.data.IntervalModel
 import com.example.hiitintervaltimer.ui.data.WORKOUT_FUNCTION
 import com.example.hiitintervaltimer.ui.data.WorkoutModel
 
 @Composable
-fun NewWorkout(navController: NavController, db: SqlLiteManager, modifier: Modifier) {
+fun NewWorkout(navController: NavController, db: SqlLiteManager, id: Int, modifier: Modifier, ) {
+    val workout = db.getWorkout(id)
     var workoutName by remember { mutableStateOf("New Workout") }
     var workoutDesc by remember { mutableStateOf("This is an empty workout") }
     var workoutFunction by remember { mutableStateOf(WORKOUT_FUNCTION.WORKOUT) }
-    var expanded by remember { mutableStateOf(false) }
-    var intervals by remember { mutableStateOf<List<IntervalModel>>(emptyList()) }
+    var window by remember { mutableIntStateOf(0) }
 
-    // Dark theme background
-    Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Name:", color = Color.White)
-
-            // Circular button with question mark for help
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                BasicTextField(
-                    value = workoutName,
-                    onValueChange = { workoutName = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                        .background(Color.Gray.copy(alpha = 0.2f), shape = RoundedCornerShape(8.dp))
-                        .padding(16.dp),
-                    textStyle = TextStyle(color = Color.White)
-                )
-                IconButton(onClick = { /* Show popup explanation */ }) {
-                    Icon(Icons.Default.Info, contentDescription = "Help", tint = Color.White)
-                }
-            }
-
-            Text("Description:", color = Color.White)
-            // Circular button with question mark for help
-            BasicTextField(
-                value = workoutDesc,
-                onValueChange = { workoutDesc = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-                    .background(Color.Gray.copy(alpha = 0.2f), shape = RoundedCornerShape(8.dp))
-                    .padding(16.dp),
-                textStyle = TextStyle(color = Color.White)
+    val inputs = arrayListOf(
+        InputWindow(
+            "This field is used for users, like you, to distinguish one workout from another. You may also hear your voice assistance mention this name before your workout starts.",
+            TextField(
+                "Workout Name",
+                { submitted -> workoutName = submitted; window += 1 },
+                workoutName
             )
-
-            Text("Function:", color = Color.White)
-
-            // Dropdown menu for workout function
-            Box {
-                BasicTextField(
-                    value = workoutFunction.value,
-                    onValueChange = { workoutFunction = WORKOUT_FUNCTION.valueOf(it) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                        .background(Color.Gray.copy(alpha = 0.2f), shape = RoundedCornerShape(8.dp))
-                        .padding(16.dp),
-                    textStyle = TextStyle(color = Color.White)
-                )
-
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                    offset = DpOffset(0.dp, 10.dp),
-                    properties = PopupProperties(focusable = true)
-                ) {
-                    DropdownMenuItem(
-                        onClick = {
-                            workoutFunction = WORKOUT_FUNCTION.WORKOUT
-                            expanded = false
-                        },
-                        text = { Text("Workout", color = Color.White) }
-                    )
-                    DropdownMenuItem(
-                        onClick = {
-                            workoutFunction = WORKOUT_FUNCTION.WARM_UP
-                            expanded = false
-                        },
-                        text = { Text("Warm Up", color = Color.White) }
-                    )
-                    DropdownMenuItem(
-                        onClick = {
-                            workoutFunction = WORKOUT_FUNCTION.COOL_DOWN
-                            expanded = false
-                        },
-                        text = { Text("Cool Down", color = Color.White) }
-                    )
-                }
-            }
-
-            // Interval form section
-            IntervalForm(onAddInterval = { newInterval -> intervals = intervals + newInterval }, db = db)
-
-            // Displaying the list of intervals added
-            IntervalList(intervals = intervals)
-
-            // Button to submit the workout
-            Button(
-                onClick = {
-                    val workout = WorkoutModel(
-                        -1,
-                        name = workoutName,
-                        desc = workoutDesc,
-                        function = workoutFunction,
-                        intervals = intervals
-                    )
-                    db.addWorkout(workout)
-                },
-                modifier = Modifier
-                    .padding(vertical = 16.dp)
-                    .fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(Color(0xFF9B2D20)) // Brick Red
-            ) {
-                Text("Create Workout", color = Color.White)
-            }
-        }
-    }
-}
-
-@Composable
-fun IntervalForm(
-    onAddInterval: (IntervalModel) -> Unit, db: SqlLiteManager) {
-    var expanded by remember { mutableStateOf(false) }
-    var intervalName by remember { mutableStateOf("") }
-    var iIntervalDesc by remember { mutableStateOf("") }
-    var intervalType by remember { mutableStateOf(INTERVAL_OPTION.TIMED) }
-    var intervalValue by remember { mutableIntStateOf(0) }
-    var intervalDetails by remember { mutableStateOf("") }
-
-    // Dark theme background for interval form
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Name field
-            Text("Name:", color = Color.White)
-            BasicTextField(
-                value = intervalName,
-                onValueChange = { intervalName = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-                    .background(Color.Gray.copy(alpha = 0.2f), shape = RoundedCornerShape(8.dp))
-                    .padding(16.dp),
-                textStyle = TextStyle(color = Color.White)
+        ),
+        InputWindow(
+            "This field describes your workout so you know extactly what your doing",
+            TextField(
+                "Description",
+                { submiited -> workoutDesc = submiited; window += 1 },
+                workoutDesc
             )
-
-            // Description field
-            Text("Description:", color = Color.White)
-            BasicTextField(
-                value = iIntervalDesc,
-                onValueChange = { iIntervalDesc = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-                    .background(Color.Gray.copy(alpha = 0.2f), shape = RoundedCornerShape(8.dp))
-                    .padding(16.dp),
-                textStyle = TextStyle(color = Color.White)
-            )
-
-            // Interval Type dropdown menu
-            Text("Type:", color = Color.White)
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                offset = DpOffset(0.dp, 10.dp),
-                properties = PopupProperties(focusable = true)
-            ) {
-                DropdownMenuItem(
-                    onClick = {
-                        intervalType = INTERVAL_OPTION.TIMED
-                        expanded = false
-                    },
-                    text = { Text("Timed", color = Color.White) }
-                )
-                DropdownMenuItem(
-                    onClick = {
-                        intervalType = INTERVAL_OPTION.COUNTED
-                        expanded = false
-                    },
-                    text = { Text("Counted", color = Color.White) }
-                )
-            }
-
-            Text("Selected Option: ${intervalType.toString().capitalize()}", color = Color.White)
-
-            // Interval Value field
-            Text("Value:", color = Color.White)
-            BasicTextField(
-                value = TextFieldValue(intervalValue.toString()),
-                onValueChange = { intervalValue = it.text.toIntOrNull() ?: 0 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-                    .background(Color.Gray.copy(alpha = 0.2f), shape = RoundedCornerShape(8.dp))
-                    .padding(16.dp),
-                textStyle = TextStyle(color = Color.White)
-            )
-
-            // Details field for counted interval type
-            if (intervalType == INTERVAL_OPTION.COUNTED) {
-                Text("Details:", color = Color.White)
-                BasicTextField(
-                    value = intervalDetails,
-                    onValueChange = { intervalDetails = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                        .background(Color.Gray.copy(alpha = 0.2f), shape = RoundedCornerShape(8.dp))
-                        .padding(16.dp),
-                    textStyle = TextStyle(color = Color.White)
-                )
-            }
-
-            Button(
-                onClick = {
-                    val interval = db.getProperType(intervalType)
-                    if (interval != null) {
-                        onAddInterval(interval)
+        ),
+        InputWindow("This field tells both you and the app what this workout function is. Your choices are warm up, cool down, and workout, this allows easy access and workout plan building, as you can select a warm up, workout and cool down to play in order",
+            MultipleChoiceField(
+                "Workout Function",
+                { submitted -> workoutFunction = WORKOUT_FUNCTION.valueOf(submitted); window += 1 },
+                WORKOUT_FUNCTION.values().map { it.name } // Maps enum to list of string values
+            )),
+        InputWindow("This window is asking you to confirm your choices. Review the values in the window and press confirm to continue",
+            Confirmation(
+                {
+                val workoutId = db.addWorkout(WorkoutModel(id, workoutName, workoutDesc, workoutFunction, emptyList<IntervalModel>()))
+                navController.navigate("workout/add/${workoutId}")
+            },
+            {
+                navController.navigate("home")
+            },
+                { field: String ->
+                    window = when (field) {
+                        "Name" -> 0
+                        "Description" -> 1
+                        "Function" -> 2
+                        else -> window
                     }
-                    // Reset fields
-                    intervalName = ""
-                    iIntervalDesc = ""
-                    intervalValue = 0
-                    intervalDetails = ""
-                },
-                modifier = Modifier
-                    .padding(vertical = 16.dp)
-                    .fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(Color(0xFF9B2D20)) // Brick Red
-            ) {
-                Text("Add Interval", color = Color.White)
-            }
-        }
+                },"",
+                mapOf(
+                    "Name" to workoutName,
+                    "Description" to workoutDesc,
+                    "Function" to workoutFunction.value
+                )
+            )))
+
+    if (id > -1) {
+        inputs.add(InputWindow("", UpdateInterval(navController, {submitted -> workout?.setIntervals(submitted)}, workout?.intervals ?: emptyList())))
+    }
+
+    Column {
+        MultiWindowForm(navController, if(id > -1 ) "Update Workout" else "Create Workout", inputs, Modifier)
     }
 }
 
 @Composable
-fun TextForm(name: String, help: String, onNext: () -> Unit) {
-    var workoutName by remember { mutableStateOf("") }
+fun DraggableItem(interval: IntervalModel, onLongPress: () -> Unit, onDragMoved: (Int) -> Unit) {
+    var isDragging by remember { mutableStateOf(false) }
 
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Modifier
+    Box(
+        modifier = Modifier
+            .padding(8.dp)
             .fillMaxWidth()
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Modifier
-                .fillMaxWidth()
-            Column {
-                IconButton(
-                    onClick = {},
-                ) {
-                    Icon(Icons.Default.Info, contentDescription = "Help", tint = Color.White)
+            .background(Color.Gray.copy(alpha = 0.1f))
+            .clickable {
+                if (!isDragging) {
+                    onLongPress() // Trigger long press action (navigate to com.example.hiitintervaltimer.ui.screen.AddInterval)
                 }
             }
-            Column {
-                OutlinedTextField(
-                    value = workoutName,
-                    onValueChange = { workoutName = it },
-                    label = { Text(name) },
-                    placeholder = { Text("Enter $name Here: ") }
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        val press = awaitPointerEventScope { awaitFirstDown() }
+                        isDragging = true
+                        // Handle drag movement here, pass position updates to onDragMoved
+                        onDragMoved(0)  // You will need to implement actual drag movement logic
+                    }
                 )
-                IconButton(
-                    onClick = onNext,
-                ) {
-                    Icon(Icons.Default.Check, contentDescription = "Next", tint = Color.White)
-                }
             }
-}}}
+            .padding(16.dp)
+    ) {
+        Text(text = interval.name)
+    }
+}
+
+
+@Composable
+fun UpdateInterval(navController: NavController, onSubmit: (submit: List<IntervalModel>) -> Unit, intervalList: List<IntervalModel>
+) {
+    // Create a mutable state to hold the current list for reordering
+    val reorderedIntervals by remember { mutableStateOf(intervalList) }
+
+    // Handle drag and drop reordering and long press for updating
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        reorderedIntervals.map() { interval ->
+            // Drag and drop item (you may use a custom drag-and-drop component or library)
+            DraggableItem(
+                interval = interval,
+                onLongPress = {
+                    // On long press, navigate to com.example.hiitintervaltimer.ui.screen.AddInterval to update this interval
+                    navController.navigate("add_interval_screen/${interval.id}")
+                }
+            ) { newPosition ->
+                // Update the position of the interval in the list
+                val temp = interval.order
+                interval.order = newPosition
+                for (item in reorderedIntervals) {
+                    if (item.order == newPosition) {
+                        item.order = temp
+                        break
+                    }
+                }
+                reorderedIntervals.sortedBy {it.order}
+            }
+        }
+    }
+
+    // IconButton that triggers onSubmit when clicked
+    IconButton(
+        onClick = { onSubmit(reorderedIntervals) }
+    ) {
+        Icon(imageVector = Icons.Default.Check, contentDescription = "Submit Changes")
+    }
+}
