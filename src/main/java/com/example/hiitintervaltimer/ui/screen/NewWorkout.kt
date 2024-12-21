@@ -36,84 +36,65 @@ import com.example.hiitintervaltimer.ui.data.WorkoutModel
 
 @Composable
 fun NewWorkout(navController: NavController, db: SqlLiteManager, id: Int, modifier: Modifier) {
-    val workout = db.getWorkout(id)
-    var workoutName by remember { mutableStateOf("New Workout") }
-    var workoutDesc by remember { mutableStateOf("This is an empty workout") }
-    var workoutFunction by remember { mutableStateOf(WORKOUT_FUNCTION.WORKOUT) }
-    val max = 3
+    val workout = db.getWorkout(id) ?: WorkoutModel(-1, "", "", WORKOUT_FUNCTION.WORKOUT, emptyList<IntervalModel>())
 
     val inputs = arrayListOf(
         InputWindow(
+            "Name",
             "This field is used for users, like you, to distinguish one workout from another. You may also hear your voice assistance mention this name before your workout starts."
         ) { onSubmit: () -> Unit ->
             TextField(
                 "Workout Name",
                 { submitted ->
-                    workoutName = submitted;  onSubmit()
+                    workout.name = submitted;  onSubmit()
                 },
-                workoutName
+                workout.name
             )
         },
         InputWindow(
+            "Desscription",
             "This field describes your workout so you know exactly what you're doing"
         ) { onSubmit: () -> Unit ->
             TextField(
                 "Description",
                 { submitted ->
-                    workoutDesc = submitted; onSubmit()
+                    workout.desc = submitted; onSubmit()
                 },
-                workoutDesc
+                workout.desc
             )
         },
         InputWindow(
+            "Function",
             "This field tells both you and the app what this workout function is. Your choices are warm up, cool down, and workout, this allows easy access and workout plan building, as you can select a warm up, workout, and cool down to play in order"
         ) { onSubmit: () -> Unit ->
             MultipleChoiceField(
                 "Workout Function",
                 { submitted ->
-                    workoutFunction = submitted as WORKOUT_FUNCTION;  onSubmit()
+                    workout.function = submitted as WORKOUT_FUNCTION;  onSubmit()
                 },
                 WORKOUT_FUNCTION.entries.map { it }
             )
         },
-//        InputWindow(
-//            "This window is asking you to confirm your choices. Review the values in the window and press confirm to continue",
-//            {
-//                Confirmation(
-//                    {
-//                        val workoutId = db.addWorkout(WorkoutModel(id, workoutName, workoutDesc, workoutFunction, emptyList<IntervalModel>()))
-//                        navController.navigate("workout/add/${workoutId}")
-//                    },
-//                    {
-//                        navController.navigate("home")
-//                    },
-//                    { field: String ->
-//                        window = when (field) {
-//                            "Name" -> 0
-//                            "Description" -> 1
-//                            "Function" -> 2
-//                        }
-//                    },
-//                    "",
-//                    mapOf(
-//                        "Name" to workoutName,
-//                        "Description" to workoutDesc,
-//                        "Function" to workoutFunction.value
-//                    )
-//                )
-//            }
-//        )
     )
 
     if (id > -1) {
-        inputs.add(InputWindow("",
-            { UpdateInterval(navController, { submitted -> workout?.updateIntervals(submitted) }, workout?.intervals ?: emptyList()) }))
+        inputs.add(InputWindow("Update Interval", ""
+        ) {
+            UpdateInterval(
+                navController,
+                { submitted: List<IntervalModel> -> workout.setInterval(submitted) },
+                workout.intervals
+            )
+        })
     }
 
     // Render only the current input window based on 'window'
     Column {
         // Use the window value to decide which input to render
-        MultiWindowForm("", inputs, Modifier)
+        MultiWindowForm("", inputs,
+            { if(id > -1) db.updateWorkout(id.toLong(), workout) },
+            { navController.navigate("home")}, listOf(workout.name, workout.desc, workout.function.value)
+        )
 //        Text("$window")  // Show the current window index for debugging
     }
 }

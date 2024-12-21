@@ -30,8 +30,12 @@ import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
+import com.google.rpc.context.AttributeContext.Response
 import java.util.Locale
 
+interface Model {
+    fun fieldsAList(): List<String>
+}
 
 @Composable
 fun TextField(fieldName: String, onNext: (submitted: String) -> Unit, workoutName: String) {
@@ -206,16 +210,36 @@ fun Confirmation(onConfirmation: () -> Unit, onCancel: () -> Unit, onUpdate: (fi
 }
 
 @Composable
-fun MultiWindowForm(name: String, inputs: List<InputWindow>, modifier: Modifier) {
+fun MultiWindowForm(name: String, inputs: List<InputWindow>, onConfirmation: () -> Unit, onCancel: () -> Unit, responses: List<String>) {
     var window by remember { mutableIntStateOf(0) }
     var input by remember { mutableStateOf(inputs[window]) }
+
+    val confirmation = InputWindow(
+        "Confirmation",
+        "",
+        {
+            Confirmation(
+                onConfirmation,
+                onCancel,
+                { field ->
+                    inputs.forEachIndexed() { index, item ->
+                        if (item.fieldName == field) window = index
+                    }
+                },
+                "",
+                inputs.mapIndexed { index, item ->
+                    item.fieldName to responses[index]
+                }.toMap()
+            )
+        },
+    )
 
     Box{
         Column(modifier = Modifier.padding(16.dp)) {
             Text(name, color = Color.White)
-            Field(input.help, input.view, postSubmit = { window = minOf(window+1, inputs.size); input = inputs[window]; })
-            Text(window.toString())
-            Text(input.toString())
-        }
+            Field(input.help, input.view, postSubmit = {
+                window = minOf(window+1, inputs.size)
+                input = if (window == inputs.size) confirmation else inputs[window]; })
+      }
     }
 }

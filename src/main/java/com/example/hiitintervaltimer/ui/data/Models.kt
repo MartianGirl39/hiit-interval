@@ -13,6 +13,8 @@ enum class WORKOUT_FUNCTION(val value: String) {
     COOL_DOWN("cool_down")
 }
 
+
+
 class WorkoutModel(var id: Int, var name: String, var desc: String, var function: WORKOUT_FUNCTION, var intervals: List<IntervalModel>){
     fun setInterval(intervals: List<IntervalModel>) {
         this.intervals = intervals
