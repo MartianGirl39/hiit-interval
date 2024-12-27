@@ -38,6 +38,10 @@ import com.example.hiitintervaltimer.ui.data.WorkoutModel
 fun NewWorkout(navController: NavController, db: SqlLiteManager, id: Int, modifier: Modifier) {
     val workout = db.getWorkout(id) ?: WorkoutModel(-1, "", "", WORKOUT_FUNCTION.WORKOUT, emptyList<IntervalModel>())
 
+    var name by remember { mutableStateOf(workout.name) }
+    var desc by remember { mutableStateOf(workout.desc) }
+    var function by remember { mutableStateOf(workout.function) }
+
     val inputs = arrayListOf(
         InputWindow(
             "Name",
@@ -46,9 +50,9 @@ fun NewWorkout(navController: NavController, db: SqlLiteManager, id: Int, modifi
             TextField(
                 "Workout Name",
                 { submitted ->
-                    workout.name = submitted;  onSubmit()
+                    name = submitted;  onSubmit()
                 },
-                workout.name
+                name
             )
         },
         InputWindow(
@@ -58,9 +62,9 @@ fun NewWorkout(navController: NavController, db: SqlLiteManager, id: Int, modifi
             TextField(
                 "Description",
                 { submitted ->
-                    workout.desc = submitted; onSubmit()
+                    desc = submitted; onSubmit()
                 },
-                workout.desc
+                desc
             )
         },
         InputWindow(
@@ -70,32 +74,22 @@ fun NewWorkout(navController: NavController, db: SqlLiteManager, id: Int, modifi
             MultipleChoiceField(
                 "Workout Function",
                 { submitted ->
-                    workout.function = submitted as WORKOUT_FUNCTION;  onSubmit()
+                    function = submitted as WORKOUT_FUNCTION;  onSubmit()
                 },
                 WORKOUT_FUNCTION.entries.map { it }
             )
         },
     )
 
-    if (id > -1) {
-        inputs.add(InputWindow("Update Interval", ""
-        ) {
-            UpdateInterval(
-                navController,
-                { submitted: List<IntervalModel> -> workout.setInterval(submitted) },
-                workout.intervals
-            )
-        })
-    }
-
     // Render only the current input window based on 'window'
     Column {
         // Use the window value to decide which input to render
         MultiWindowForm("", inputs,
-            { if(id > -1) db.updateWorkout(id.toLong(), workout) },
-            { navController.navigate("home")}, listOf(workout.name, workout.desc, workout.function.value)
+            { if(id > -1) db.updateWorkout(id.toLong(), WorkoutModel(-1, name, desc, function, workout?.intervals?: emptyList())) else db.addWorkout(
+                WorkoutModel(-1, name, desc, function, emptyList())
+            ) },
+            { navController.navigate("home")}, listOf(name, desc, function.value)
         )
-//        Text("$window")  // Show the current window index for debugging
     }
 }
 

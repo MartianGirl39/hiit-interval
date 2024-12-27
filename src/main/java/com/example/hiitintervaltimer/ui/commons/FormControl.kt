@@ -217,22 +217,21 @@ fun MultiWindowForm(name: String, inputs: List<InputWindow>, onConfirmation: () 
     val confirmation = InputWindow(
         "Confirmation",
         "",
-        {
-            Confirmation(
-                onConfirmation,
-                onCancel,
-                { field ->
-                    inputs.forEachIndexed() { index, item ->
-                        if (item.fieldName == field) window = index
-                    }
-                },
-                "",
-                inputs.mapIndexed { index, item ->
-                    item.fieldName to responses[index]
-                }.toMap()
-            )
-        },
-    )
+    ) {
+        Confirmation(
+            onConfirmation,
+            onCancel,
+            { field ->
+                inputs.forEachIndexed() { index, item ->
+                    if (item.fieldName == field) window = index
+                }
+            },
+            "",
+            inputs.mapIndexed { index, item ->
+                item.fieldName to responses[index]
+            }.toMap()
+        )
+    }
 
     Box{
         Column(modifier = Modifier.padding(16.dp)) {

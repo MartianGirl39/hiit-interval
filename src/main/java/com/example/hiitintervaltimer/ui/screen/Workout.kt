@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.hiitintervaltimer.ui.data.IntervalModel
 import com.example.hiitintervaltimer.ui.data.SqlLiteManager
+import com.example.hiitintervaltimer.ui.data.WORKOUT_FUNCTION
 
 @Composable
 fun Workout(navController: NavHostController, db: SqlLiteManager, id: Int) {
